@@ -51,7 +51,7 @@ parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number 
 parser.add_argument('--teto', default=200, type=int, metavar='teto', help='teto knn')
 parser.add_argument('--distill_mode', type=str, default='eigen', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
-parser.add_argument('--operation', type=str, default='inter', choices=['inter','union','union_fine_g1', 'union_fine_g1_g2','union_fine_g3_g4', 'union_fine_g1_g2_g3', 'union_fine_g2_g3_g4', 'sr', 'srbm'], help='mode for selection.')
+# parser.add_argument('--operation', type=str, default='inter', choices=['inter','union','union_fine_g1', 'union_fine_g1_g2','union_fine_g3_g4', 'union_fine_g1_g2_g3', 'union_fine_g2_g3_g4', 'sr', 'srbm'], help='mode for selection.')
 
 
 def train(labeled_trainloader, modified_label, all_trainloader, encoder, classifier, proj_head, pred_head, optimizer, epoch, args):
