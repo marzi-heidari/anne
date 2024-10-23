@@ -523,15 +523,15 @@ def main():
 
     # generate train dataset with only filtered clean subset
     train_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                               #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                               noise_data_dir=None, noisy_dataset=None,
+                            #    noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
+                               noise_data_dir=args.dataset_path, noisy_dataset=None,
                                transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
                                dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                                noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
                                
     eval_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=weak_transform,
                               #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                              noise_data_dir=None, noisy_dataset=None,
+                              noise_data_dir=args.dataset_path, noisy_dataset=None,
                               dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                               open_ratio=args.open_ratio,
                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
@@ -542,7 +542,7 @@ def main():
                               dataset_mode='test')
     all_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
                                    #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                                   noise_data_dir=None, noisy_dataset=None,
+                                   noise_data_dir=args.dataset_path, noisy_dataset=None,
                                    transform=MixTransform(strong_transform=strong_transform, weak_transform=weak_transform, K=1),
                                    open_ratio=args.open_ratio,
                                    dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
