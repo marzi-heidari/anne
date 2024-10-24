@@ -1419,6 +1419,107 @@ def ball_predict(id,epoch, feature, feature_bank, feature_labels, classes, radiu
     pred_labels = pred_scores.argmax(dim=-1)
     return pred_scores, pred_labels, knn_k
 
+
+def temp_ball_predict(id, feature, feature_bank, feature_labels, classes, radius,  radaptive=None, otsu_split=None,teto=200):
+    # compute cos similarity between each feature vector and feature bank ---> [B, N]
+    sim_matrix = torch.mm(feature, feature_bank)
+    
+    mask = sim_matrix>radius
+    sim_indices = torch.nonzero(mask)
+    
+    if ("otsu" in radaptive) and (otsu_split is not None):
+        
+        if id in otsu_split['clean_ids']:   
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<5:
+                    temp_radius -=0.01
+                else:
+                    break
+            
+        elif id in otsu_split['maybe_clean_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<20:
+                    temp_radius -=0.01
+                else:
+                    break
+        elif id in otsu_split['maybe_noisy_ids'] :
+            temp_radius = 0.99
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<40:
+                    temp_radius -=0.01
+                else:
+                    break
+        elif id in otsu_split['noisy_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<80:
+                    temp_radius -=0.01
+                else:
+                    break
+        else:
+            raise Exception("Invalid id")
+            
+    sim_label_topk = False 
+
+    
+
+            
+    
+    #O tipo2 = tamanho livre
+    # Resultado 0.95: O mínimo sempre deu 1 (o que eu acho que prejudicou), e o máximo normalmente dá menor que 100
+    # Talvez baixando o raio ele melhore.
+    knn_k = len(sim_indices)
+    
+    
+    if knn_k > teto:
+        knn_k = teto
+    elif knn_k <5:
+        knn_k = 5
+    
+    sim_weight, sim_indices = sim_matrix.topk(k=knn_k, dim=-1)
+    sim_label_topk = True
+        
+    # [B, K]
+    
+    if sim_label_topk == True:
+        sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices)
+    else:
+        sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices[:,1].view(1,-1))
+    # print(sim_weight.shape, sim_labels.shape)
+    
+    # if knnweight:
+    #     #using real weights based on limilarity [frc]
+    #     sim_weight = (sim_weight)/sim_weight.sum(-1)
+
+    # else:
+
+    sim_weight = torch.ones_like(sim_weight)
+
+    sim_weight = sim_weight / sim_weight.sum(dim=-1, keepdim=True)
+    
+
+    # counts for each class
+    one_hot_label = torch.zeros(feature.size(0) * knn_k, classes, device=sim_labels.device)
+    # [B*K, C]
+    one_hot_label = one_hot_label.scatter(dim=-1, index=sim_labels.view(-1, 1), value=1.0)
+    # weighted score ---> [B, C]
+    
+    
+    pred_scores = torch.sum(one_hot_label.view(feature.size(0), -1, classes) * sim_weight.unsqueeze(dim=-1), dim=1)
+    # print(pred_scores.shape)
+    pred_labels = pred_scores.argmax(dim=-1)
+    return pred_scores, pred_labels, knn_k
+
 def aknn_predict(id, feature, feature_bank, feature_labels, classes, rule="type1", radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80):
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.mm(feature, feature_bank)
@@ -1619,6 +1720,59 @@ def fast_weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, chun
             #part_score, part_pred, k_value = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
             #part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
             part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto, kmin1=kmin1, kmin2=kmin2)
+            # part_score, part_pred = knn_predict(part_feature, feature.T, label, num_classes, 200)
+            # k_value=200
+
+            score = torch.cat([score, part_score], dim=0)
+            pred = torch.cat([pred, part_pred], dim=0)
+            # knn_min = min(k_value, knn_min)
+            # knn_max = max(k_value, knn_max)
+            # knn_hist.append(k_value)
+            
+        # knn_mean = mean(knn_hist)
+        # knn_std = stdev(knn_hist)
+        # balanced vote
+        if norm == 'global':
+            # global normalization
+            score = score / pi
+        else:  # no normalization
+            pass
+        score = score/score.sum(1, keepdim=True)
+
+        #pred_scores2 = pred_scores/pred_scores.sum(1, keepdim=True)
+    # print(f'knn_min: {knn_min} knn_max: {knn_max}')
+
+    #return score, knn_min, knn_max, knn_mean, knn_std   # , pred
+    return score # , pred
+
+def temp_fast_weighted_knn_ball(cur_feature, feature, label, num_classes, chunks=10, norm='global', rule="type1",conf=None, radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80):
+    # distributed fast KNN and sample selection with three different modes
+    num = len(cur_feature)
+    num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
+        feature.device) + 1e-10
+    pi = num_class / num_class.sum()
+    split = torch.tensor(np.linspace(0, num, chunks + 1, dtype=int), dtype=torch.long).to(feature.device)
+    
+    # it will be a sample at a time because the neighborhood change be differt for each sample
+    # split = torch.tensor(np.linspace(0, num, num+1, dtype=int), dtype=torch.long).to(feature.device)
+    score = torch.tensor([]).to(feature.device)
+    pred = torch.tensor([], dtype=torch.long).to(feature.device)
+    feature = torch.nn.functional.normalize(feature, dim=1)
+    # knn_min = 100000
+    # knn_max = -1
+    # knn_hist = []
+    with torch.no_grad():
+        for i in range(chunks):
+        #for i in range(num-1):
+        # for i in range(num):
+            torch.cuda.empty_cache()
+            part_feature = cur_feature[split[i]: split[i + 1]]
+
+            
+            
+            # part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto, kmin1=kmin1, kmin2=kmin2)
+            # part_score, part_pred, k_value = ball_predict(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,knnweight=knnweight,radaptive=radaptive,teto=teto)
+            part_score, part_pred, _ = temp_ball_predict(i, part_feature, feature.T, label, num_classes, radius,  radaptive=radaptive,teto=200)
             # part_score, part_pred = knn_predict(part_feature, feature.T, label, num_classes, 200)
             # k_value=200
 
