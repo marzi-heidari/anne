@@ -42,7 +42,7 @@ parser.add_argument('--entity', type=str, help='Wandb user entity')
 parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
 parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
-parser.add_argument('--rule', type=str, default='type1')
+# parser.add_argument('--rule', type=str, default='type1')
 parser.add_argument('--knnweight', default=False, action='store_true')
 parser.add_argument('--radaptive', type=str, default=None,
     choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
