@@ -176,7 +176,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         
         # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
         # prediction_knn = temp_fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
-        prediction_knn = temp_fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,   radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+        prediction_knn = temp_fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, args.k,   radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
         vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
         right_score = vote_y / vote_max
