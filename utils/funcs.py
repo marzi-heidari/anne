@@ -1420,7 +1420,7 @@ def ball_predict(id,epoch, feature, feature_bank, feature_labels, classes, radiu
     return pred_scores, pred_labels, knn_k
 
 
-def temp_ball_predict(id, feature, feature_bank, feature_labels, classes, radius,  radaptive=None, otsu_split=None,teto=200):
+def temp_ball_predict(id, feature, feature_bank, feature_labels, classes, radius,  radaptive=None, otsu_split=None,teto=200, step=0.01):
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.mm(feature, feature_bank)
     
@@ -1545,8 +1545,8 @@ def aknn_predict(id, feature, feature_bank, feature_labels, classes, rule="type1
     # temp_radius = 0.99 
     # mask = sim_matrix>temp_radius
     # kmask = torch.sum(sim_matrix>temp_radius,-1)
-    #step = 0.01
-    step = 0.03
+    step = 0.01
+    # step = 0.03
     
     for id in range(sim_matrix.size(0)):
         # if ("otsu" in radaptive) and (otsu_split is not None):
