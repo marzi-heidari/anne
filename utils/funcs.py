@@ -1427,47 +1427,50 @@ def temp_ball_predict(id, feature, feature_bank, feature_labels, classes, radius
     mask = sim_matrix>radius
     sim_indices = torch.nonzero(mask)
     
-    if ("otsu" in radaptive) and (otsu_split is not None):
+    #if ("otsu" in radaptive) and (otsu_split is not None):
+    # if (otsu_split is not None):
         
-        if id in otsu_split['clean_ids']:   
-            temp_radius = 0.99 
-            while True:
-                mask = sim_matrix>temp_radius
-                sim_indices = torch.nonzero(mask)
-                if len(sim_indices)<5:
-                    temp_radius -=0.01
-                else:
-                    break
-            
-        elif id in otsu_split['maybe_clean_ids']:
-            temp_radius = 0.99 
-            while True:
-                mask = sim_matrix>temp_radius
-                sim_indices = torch.nonzero(mask)
-                if len(sim_indices)<20:
-                    temp_radius -=0.01
-                else:
-                    break
-        elif id in otsu_split['maybe_noisy_ids'] :
-            temp_radius = 0.99
-            while True:
-                mask = sim_matrix>temp_radius
-                sim_indices = torch.nonzero(mask)
-                if len(sim_indices)<40:
-                    temp_radius -=0.01
-                else:
-                    break
-        elif id in otsu_split['noisy_ids']:
-            temp_radius = 0.99 
-            while True:
-                mask = sim_matrix>temp_radius
-                sim_indices = torch.nonzero(mask)
-                if len(sim_indices)<80:
-                    temp_radius -=0.01
-                else:
-                    break
-        else:
-            raise Exception("Invalid id")
+    if id in otsu_split['clean_ids']:   
+        temp_radius = 0.99 
+
+        while True:
+            mask = sim_matrix>temp_radius
+            sim_indices = torch.nonzero(mask)
+            import pdb; pdb.set_trace()
+            if len(sim_indices)<5:
+                temp_radius -=0.01
+            else:
+                break
+        
+    elif id in otsu_split['maybe_clean_ids']:
+        temp_radius = 0.99 
+        while True:
+            mask = sim_matrix>temp_radius
+            sim_indices = torch.nonzero(mask)
+            if len(sim_indices)<20:
+                temp_radius -=0.01
+            else:
+                break
+    elif id in otsu_split['maybe_noisy_ids'] :
+        temp_radius = 0.99
+        while True:
+            mask = sim_matrix>temp_radius
+            sim_indices = torch.nonzero(mask)
+            if len(sim_indices)<40:
+                temp_radius -=0.01
+            else:
+                break
+    elif id in otsu_split['noisy_ids']:
+        temp_radius = 0.99 
+        while True:
+            mask = sim_matrix>temp_radius
+            sim_indices = torch.nonzero(mask)
+            if len(sim_indices)<80:
+                temp_radius -=0.01
+            else:
+                break
+    else:
+        raise Exception("Invalid id")
             
     sim_label_topk = False 
 
