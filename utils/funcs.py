@@ -1605,7 +1605,8 @@ def temp_ball_predict2(id, feature, feature_bank, feature_labels, classes, radiu
         # [B, K]
         
         if sim_label_topk == True:
-            sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices)
+            #sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices)
+            sim_labels = torch.gather(feature_labels.expand(1, -1), dim=-1, index=sim_indices.unsqueeze(0))
         else:
             sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices[:,1].view(1,-1))
         
