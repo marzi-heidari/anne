@@ -1775,7 +1775,7 @@ def temp_fast_weighted_knn_ball(cur_feature, feature, label, num_classes, chunks
             
             # part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto, kmin1=kmin1, kmin2=kmin2)
             # part_score, part_pred, k_value = ball_predict(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,knnweight=knnweight,radaptive=radaptive,teto=teto)
-            part_score, part_pred, _ = temp_ball_predict(i, part_feature, feature.T, label, num_classes, radius,  radaptive=radaptive,teto=200)
+            part_score, part_pred, _ = temp_ball_predict(i, part_feature, feature.T, label, num_classes, radius,  radaptive=radaptive,teto=teto,otsu_split=otsu_split)
             # part_score, part_pred = knn_predict(part_feature, feature.T, label, num_classes, 200)
             # k_value=200
 
