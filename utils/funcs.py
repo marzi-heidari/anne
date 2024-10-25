@@ -1914,6 +1914,60 @@ def temp_fast_weighted_knn_ball(cur_feature, feature, label, num_classes, chunks
     #return score, knn_min, knn_max, knn_mean, knn_std   # , pred
     return score # , pred
 
+def debug_fast_weighted_knn_ball(cur_feature, feature, label, num_classes, chunks=10, norm='global', rule="type1",conf=None, radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80,radius=0.99):
+    # distributed fast KNN and sample selection with three different modes
+    num = len(cur_feature)
+    num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
+        feature.device) + 1e-10
+    pi = num_class / num_class.sum()
+    split = torch.tensor(np.linspace(0, num, chunks + 1, dtype=int), dtype=torch.long).to(feature.device)
+    
+    # it will be a sample at a time because the neighborhood change be differt for each sample
+    # split = torch.tensor(np.linspace(0, num, num+1, dtype=int), dtype=torch.long).to(feature.device)
+    score = torch.tensor([]).to(feature.device)
+    pred = torch.tensor([], dtype=torch.long).to(feature.device)
+    feature = torch.nn.functional.normalize(feature, dim=1)
+    # knn_min = 100000
+    # knn_max = -1
+    # knn_hist = []
+    with torch.no_grad():
+        for i in range(chunks):
+        #for i in range(num-1):
+        # for i in range(num):
+            torch.cuda.empty_cache()
+            part_feature = cur_feature[split[i]: split[i + 1]]
+
+            
+            
+            # part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto, kmin1=kmin1, kmin2=kmin2)
+            # part_score, part_pred, k_value = ball_predict(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,knnweight=knnweight,radaptive=radaptive,teto=teto)
+            part_score, part_pred, _ = temp_ball_predict(i, part_feature, feature.T, label, num_classes, radius,  radaptive=radaptive,teto=teto,otsu_split=otsu_split)
+            # part_score, part_pred, _ = temp_ball_predict2(i, part_feature, feature.T, label, num_classes, radius,  radaptive=radaptive,teto=teto,otsu_split=otsu_split)
+            # part_score, part_pred = knn_predict(part_feature, feature.T, label, num_classes, 200)
+            # k_value=200
+
+            score = torch.cat([score, part_score], dim=0)
+            pred = torch.cat([pred, part_pred], dim=0)
+            # knn_min = min(k_value, knn_min)
+            # knn_max = max(k_value, knn_max)
+            # knn_hist.append(k_value)
+            
+        # knn_mean = mean(knn_hist)
+        # knn_std = stdev(knn_hist)
+        # balanced vote
+        if norm == 'global':
+            # global normalization
+            score = score / pi
+        else:  # no normalization
+            pass
+        score = score/score.sum(1, keepdim=True)
+
+        #pred_scores2 = pred_scores/pred_scores.sum(1, keepdim=True)
+    # print(f'knn_min: {knn_min} knn_max: {knn_max}')
+
+    #return score, knn_min, knn_max, knn_mean, knn_std   # , pred
+    return score # , pred
+
 def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, knn_k=100, chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
     # distributed fast KNN and sample selection with three different modes
     num = len(cur_feature)
