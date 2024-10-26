@@ -27,7 +27,7 @@ parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noi
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
 parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
-parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
+# parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
 
 # train settings
 parser.add_argument('--model', default='PreResNet18', help=f'model architecture (default: PreResNet18)')
@@ -39,20 +39,20 @@ parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight dec
 parser.add_argument('--seed', default=3047, type=int, help='seed for initializing training. (default: 3047)')
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
 parser.add_argument('--entity', type=str, help='Wandb user entity')
-parser.add_argument('--run_path', type=str, help='run path containing all results')
+# parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
-parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
+# parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
 # parser.add_argument('--rule', type=str, default='type1')
-parser.add_argument('--knnweight', default=False, action='store_true')
-parser.add_argument('--radaptive', type=str, default=None,
-    choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
-             'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
+# parser.add_argument('--knnweight', default=False, action='store_true')
+# parser.add_argument('--radaptive', type=str, default=None,
+#     choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
+#              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
-parser.add_argument('--teto', default=200, type=int, metavar='teto', help='teto knn')
+parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help= 'knn max valuee')
 parser.add_argument('--distill_mode', type=str, default='eigen', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
-parser.add_argument('--kmin1', default=40, type=int, metavar='N', help='kmin1')
-parser.add_argument('--kmin2', default=80, type=int, metavar='N', help='kmin2')
+parser.add_argument('--kmin1', default=40, type=int, metavar='N1', help='kmin1')
+parser.add_argument('--kmin2', default=80, type=int, metavar='N2', help='kmin2')
 # parser.add_argument('--operation', type=str, default='inter', choices=['inter','union','union_fine_g1', 'union_fine_g1_g2','union_fine_g3_g4', 'union_fine_g1_g2_g3', 'union_fine_g2_g3_g4', 'sr', 'srbm'], help='mode for selection.')
 
 
@@ -171,12 +171,13 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         
         ################################### sample selection ###################################
         # prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)  # temperature in weighted KNN
-        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto)  # temperature in weighted KNN
-        #prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
+        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil)  # temperature in weighted KNN
+        #prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
         
-        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
-        # prediction_knn = temp_fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
-        prediction_knn = debug_fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, args.k,  radius = args.radius, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
+        # prediction_knn = temp_fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
+        #prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes, args.k,  otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+        prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes,  otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
         vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
         right_score = vote_y / vote_max
@@ -452,39 +453,16 @@ def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
     teacher_idx = torch.tensor(teacher_idx)
     return teacher_idx, probs, scores
 
-# def get_loss_list(model, data_loader):
-#     loss_list = np.empty((0,))
 
-#     with tqdm(data_loader) as progress:
-#         for batch_idx, (data, label, index) in enumerate(progress):
-#             data = data.cuda()
-#             label = label.long().cuda()
-
-#             prediction = model(data)
-#             loss = torch.nn.CrossEntropyLoss(reduction='none')(prediction, label)
-
-#             loss_list = np.concatenate((loss_list, loss.detach().cpu()))
-    
-#     kmeans = cluster.KMeans(n_clusters=2, random_state=0).fit(loss_list.reshape(-1,1))
-    
-#     if np.mean(loss_list[kmeans.labels_==0]) > np.mean(loss_list[kmeans.labels_==1]):
-#         clean_label = 1
-#     else:
-#         clean_label = 0
-    
-#     output=[]
-#     for idx, value in enumerate(kmeans.labels_):
-#         if value==clean_label:
-#             output.append(idx)
-    
-#     return output
 
 
 def main():
     args = parser.parse_args()
     seed_everything(args.seed)
-    if args.run_path is None:
-        args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+    # if args.run_path is None:
+    #     args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+
+    args.run_path = args.exp_name
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
     global logger
