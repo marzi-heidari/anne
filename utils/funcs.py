@@ -1437,7 +1437,7 @@ def temp_ball_predict(id, feature, feature_bank, feature_labels, classes, radius
         while True:
             mask = sim_matrix>temp_radius
             sim_indices = torch.nonzero(mask)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             if len(sim_indices)<5:
                 temp_radius -=0.01
             else:
