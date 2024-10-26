@@ -49,7 +49,7 @@ parser.add_argument('--exp-name', type=str, default='')
 #              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help= 'knn max valuee')
-parser.add_argument('--distill_mode', type=str, default='eigen', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
+parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
 parser.add_argument('--kmin1', default=40, type=int, metavar='N1', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='N2', help='kmin2')
@@ -160,14 +160,14 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
 
         otsu_split = None
         if i>=args.warmup:
-            if  "otsu" in args.radaptive:
+            # if  "otsu" in args.radaptive:
                 # import pdb; pdb.set_trace()
-                group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
-                otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
-                            'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
-                            'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
-                            'noisy_ids': torch.nonzero(group_4_noisy)
-                }
+            group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
+            otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
+                        'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
+                        'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
+                        'noisy_ids': torch.nonzero(group_4_noisy)
+            }
         
         ################################### sample selection ###################################
         # prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)  # temperature in weighted KNN
