@@ -58,9 +58,6 @@ class cifar_dataset(Dataset):
             else:
                 noise_data = unpickle('%s/cifar-100-python/train' % noise_data_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
                     (0, 2, 3, 1))
-                #noise_data = unpickle('%s/cifar-100-python/train' % root_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
-                    # (0, 2, 3, 1))
-                # noise_data = None
 
             if os.path.exists(noise_file):
                 noise = json.load(open(noise_file, "r"))
@@ -78,9 +75,6 @@ class cifar_dataset(Dataset):
                         self.cifar_data[cleanIdx] = noise_data[noisyIdx]
                         self.clean_label[cleanIdx] = 10
                 self.cifar_label = noise_labels
-            # if os.path.exists(noise_file):
-            #     noise_label = json.load(open(noise_file,"r"))
-            #     self.cifar_label = noise_label
             else:
                 # inject noise
                 noise_labels = []  # all labels (some noisy, some clean)

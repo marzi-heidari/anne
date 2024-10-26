@@ -7,7 +7,7 @@ from torch.optim import SGD
 from torch.utils.data import Subset
 from tqdm import tqdm
 
-from datasets.dataloader_cifar_filipe import cifar_dataset
+from datasets.dataloader_cifar import cifar_dataset
 from models.preresnet import PreResNet18
 from sklearn.mixture import GaussianMixture
 from utils import *

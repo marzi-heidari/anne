@@ -7,16 +7,14 @@ from torch.optim import SGD
 from torch.utils.data import Subset
 from tqdm import tqdm
 
-from datasets.dataloader_cifar_filipe import cifar_dataset
+from datasets.dataloader_cifar import cifar_dataset
 from models.preresnet import PreResNet18
 from sklearn.mixture import GaussianMixture
 from utils import *
 
 parser = argparse.ArgumentParser('Train with synthetic cifar noisy dataset')
 parser.add_argument('--dataset_path', default='~/CIFAR/CIFAR10', help='dataset path')
-# parser.add_argument('--noisy_dataset_path', default='~/CIFAR/CIFAR100', help='open-set noise dataset path')
 parser.add_argument('--dataset', default='cifar10', help='dataset name')
-# parser.add_argument('--noisy_dataset', default='cifar100', help='open-set noise dataset name')
 
 # dataset settings
 parser.add_argument('--noise_mode', default='sym', type=str, help='artifical noise mode (default: symmetric)')
@@ -27,7 +25,6 @@ parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noi
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
 parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
-# parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
 
 # train settings
 parser.add_argument('--model', default='PreResNet18', help=f'model architecture (default: PreResNet18)')
@@ -39,22 +36,13 @@ parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight dec
 parser.add_argument('--seed', default=3047, type=int, help='seed for initializing training. (default: 3047)')
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
 parser.add_argument('--entity', type=str, help='Wandb user entity')
-# parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
-# parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
-# parser.add_argument('--rule', type=str, default='type1')
-# parser.add_argument('--knnweight', default=False, action='store_true')
-# parser.add_argument('--radaptive', type=str, default=None,
-#     choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
-#              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help= 'knn max valuee')
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
 parser.add_argument('--kmin1', default=40, type=int, metavar='N1', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='N2', help='kmin2')
-# parser.add_argument('--operation', type=str, default='inter', choices=['inter','union','union_fine_g1', 'union_fine_g1_g2','union_fine_g3_g4', 'union_fine_g1_g2_g3', 'union_fine_g2_g3_g4', 'sr', 'srbm'], help='mode for selection.')
-
 
 def train(labeled_trainloader, modified_label, all_trainloader, encoder, classifier, proj_head, pred_head, optimizer, epoch, args):
     encoder.train()
@@ -99,7 +87,6 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
         feats_u2 = encoder(inputs_u2)
         f, h = proj_head, pred_head
 
-        
         z1, z2 = f(feats_u1), f(feats_u2)
         p1, p2 = h(z1), h(z2)
         Lfc = D(p2, z1)
@@ -160,8 +147,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
 
         otsu_split = None
         if i>=args.warmup:
-            # if  "otsu" in args.radaptive:
-                # import pdb; pdb.set_trace()
+            
             group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
             otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
                         'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
@@ -170,13 +156,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             }
         
         ################################### sample selection ###################################
-        # prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)  # temperature in weighted KNN
-        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil)  # temperature in weighted KNN
-        #prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
         
-        # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
-        # prediction_knn = temp_fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
-        #prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes, args.k,  otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
         prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes,  otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
         vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
@@ -185,12 +165,12 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         noisy_id = torch.where(right_score < args.theta_s)[0]
 
         #choice: none(-1)/  ssr(0)/ fine(1)
-        choice_sr_g1g2=  -1
-        choice_sr_g3g4=  -1
-        fine_g1g2_sr = 0
-        fine_g3g4_sr = 0
-        ssr_g1g2_sr = 0
-        ssr_g3g4_sr = 0
+        # choice_sr_g1g2=  -1
+        # choice_sr_g3g4=  -1
+        # fine_g1g2_sr = 0
+        # fine_g3g4_sr = 0
+        # ssr_g1g2_sr = 0
+        # ssr_g3g4_sr = 0
 
 
         #fine
@@ -306,12 +286,12 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                         "selection/g3g4_precision":g3g4_precision,
                         "selection/g3g4_recall":g3g4_recall,
                         "selection/g3g4_f1":2*(g3g4_precision*g3g4_recall)/(g3g4_precision+g3g4_recall),
-                        "choice_sr_g1g2": choice_sr_g1g2,
-                        "choice_sr_g3g4": choice_sr_g3g4,
-                        "fine_g1g2_sr": fine_g1g2_sr,
-                        "fine_g3g4_sr": fine_g3g4_sr,
-                        "ssr_g1g2_sr": ssr_g1g2_sr,
-                        "ssr_g3g4_sr": ssr_g3g4_sr
+                        # "choice_sr_g1g2": choice_sr_g1g2,
+                        # "choice_sr_g3g4": choice_sr_g3g4,
+                        # "fine_g1g2_sr": fine_g1g2_sr,
+                        # "fine_g3g4_sr": fine_g3g4_sr,
+                        # "ssr_g1g2_sr": ssr_g1g2_sr,
+                        # "ssr_g3g4_sr": ssr_g3g4_sr
                         
             })
     return clean_id, noisy_id, modified_label
@@ -368,16 +348,7 @@ def fit_mixture(scores, labels, p_threshold=0.5):
             prob = prob[:,gmm.means_.argmax()]
             for i in range(len(cls_index)):
                 probs[cls_index[i]] = prob[i]
-    #         weights, means, covars = g.weights_, g.means_, g.covariances_
-            
-    #         # boundary? QDA!
-    #         a, b = (1/2) * ((1/covars[0]) - (1/covars[1])), -(means[0]/covars[0]) + (means[1]/covars[1])
-    #         c = (1/2) * ((np.square(means[0])/covars[0]) - (np.square(means[1])/covars[1]))
-    #         c -= np.log((weights[0])/np.sqrt(2*np.pi*covars[0]))
-    #         c += np.log((weights[1])/np.sqrt(2*np.pi*covars[1]))
-    #         d = b**2 - 4*a*c
-            
-    #         bound = estimate_purity(feats, means, covars, weights)
+    
             clean_labels += [cls_index[clean_idx] for clean_idx in range(len(cls_index)) if prob[clean_idx] > p_threshold] 
         else:
             clean_labels += [cls_index[clean_idx] for clean_idx in range(len(cls_index))]
@@ -433,22 +404,15 @@ def cleansing(scores, labels):
         
     return np.array(clean_labels, dtype=np.int64)
     
-#def extract_cleanidx(model, loader, mode='fine-kmeans', p_threshold=0.6):
+
 def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
-    # model.eval()
+    
     scores=None
-    # for params in model.parameters(): params.requires_grad = False
         
     # get teacher_idx
     if 'fine' in mode:
-        # features, labels = get_features(model, loader)
+
         teacher_idx, probs, scores = fine(current_features=features, current_labels=labels, fit = mode, p_threshold=p_threshold)
-    # else: # get teacher _idx via kmeans
-    #     teacher_idx = get_loss_list(model, loader)
-    #     probs = None
-        
-    # for params in model.parameters(): params.requires_grad = True
-    # model.train()
     
     teacher_idx = torch.tensor(teacher_idx)
     return teacher_idx, probs, scores
@@ -459,14 +423,12 @@ def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
 def main():
     args = parser.parse_args()
     seed_everything(args.seed)
-    # if args.run_path is None:
-    #     args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
-
+    
     args.run_path = args.exp_name
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
     global logger
-    #logger = wandb.init(project=args.dataset, entity=args.entity, name=args.run_path, group=args.dataset)
+    
     logger = wandb.init(project="noisy_labels",entity=args.entity, name=args.exp_name, allow_val_change=True)
     logger.config.update(args)
     if args.open_ratio == 0:

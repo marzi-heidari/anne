@@ -75,6 +75,7 @@ class cifar_dataset(Dataset):
                         self.cifar_data[cleanIdx] = noise_data[noisyIdx]
                         self.clean_label[cleanIdx] = 10
                 self.cifar_label = noise_labels
+            
             else:
                 # inject noise
                 noise_labels = []  # all labels (some noisy, some clean)
@@ -155,47 +156,3 @@ class cifar_dataset(Dataset):
     def __repr__(self):
         return f'dataset_mode: {self.mode}, dataset number: {len(self)} \n'
 
-
-# class cifar_dataset_fixmatch(cifar_dataset):
-#     '''
-#     Four different dataset modes:
-#         all: all train dataset with noisy labels
-#         subset: part of train dataset selected by subset_id with noisy labels
-#         test: all test dataset with clean labels
-#         memory: all train dataset with clean labels
-#     '''
-#
-#     def __init__(self, dataset, root_dir, strong_transform, weak_transform, dataset_mode='train', noise_ratio=0.5, noise_mode='sym',
-#                  noise_file=None):
-#         '''
-#         :param dataset: cifar10 or cifar100
-#         :param root_dir: dataset directory
-#         :param transform: transform made to images
-#         :param dataset_mode: 'train' or 'test' or 'eval'
-#         :param noise_ratio: generated sample noise ratio
-#         :param noise_mode: 'sym' or 'asym' or 'mixed'
-#         :param noise_file: generated noise file path
-#         '''
-#         # airplanes, cars, birds, cats, deer, dogs, frogs, horses, ships, and trucks
-#         super(cifar_dataset_fixmatch, self).__init__(dataset, root_dir, None, dataset_mode, noise_ratio, noise_mode, noise_file)
-#         self.strong_transform = strong_transform
-#         self.weak_transform = weak_transform
-#
-#     def __getitem__(self, index):
-#         img, target, index = self.cifar_data[index]
-#         strong_img = self.strong_transform(img)
-#         weak_img = self.weak_transform(img)
-#         return weak_img, strong_img, target, index
-#
-#     def __len__(self):
-#         return len(self.cifar_data)
-
-# if __name__ == '__main__':
-#     for mode in ['train', 'memory', 'test']:
-#         testdata = cifar_dataset(dataset='cifar10',
-#                                  root_dir='/Users/chen/Desktop/SSL_noise_reduction/dataset/cifar10',
-#                                  dataset_mode=mode, transform=transforms.ToTensor(),
-#                                  noise_file='/Users/chen/Desktop/SSL_noise_reduction/cifar10_noise_file.json')
-#
-#         print(len(testdata))
-#         print(testdata[0][1:])
