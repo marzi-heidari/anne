@@ -157,7 +157,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         
         ################################### sample selection ###################################
         
-        prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes,  otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+        prediction_knn = weighted_aknn( feature_bank, feature_bank, modified_label, args.num_classes, chunks=100, otsu_split=otsu_split, ceil=args.ceil, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
         vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
         right_score = vote_y / vote_max
