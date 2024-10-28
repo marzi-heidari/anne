@@ -395,7 +395,8 @@ def split_dataset(p):
 
     return group_1, group_2, group_3, group_4
 
-def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, knn_k=100, chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
+#def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, knn_k=100, chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
+def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes,  chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
     # distributed fast KNN and sample selection with three different modes
     num = len(cur_feature)
     num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
