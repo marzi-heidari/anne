@@ -430,9 +430,8 @@ def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes,  chunks=1
             # else:
             #part_score, part_pred, k_value = ball_predict(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,conf[i],knnweight=knnweight,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
 
-            part_score, part_pred, k_value = ball_predict_debug(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,conf[i],knnweight=knnweight,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
-            
-
+            #part_score, part_pred, k_value = ball_predict_debug(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,conf[i],knnweight=knnweight,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
+            part_score, part_pred, k_value = ball_predict_debug_v2(i, part_feature, feature.T, label, num_classes, otsu_split=otsu_split,teto=teto)
 
             score = torch.cat([score, part_score], dim=0)
             pred = torch.cat([pred, part_pred], dim=0)
@@ -1920,4 +1919,81 @@ def ball_predict_debug(id,epoch, feature, feature_bank, feature_labels, classes,
     pred_scores = torch.sum(one_hot_label.view(feature.size(0), -1, classes) * sim_weight.unsqueeze(dim=-1), dim=1)
     
     pred_labels = pred_scores.argmax(dim=-1)
+    return pred_scores, pred_labels, knn_k
+
+
+def ball_predict_debug_v2(id, feature, feature_bank, feature_labels, classes, otsu_split=None,ceil=200, floor=5, kmin1=40, kmin2=80, step=0.01):
+    # compute cos similarity between each feature vector and feature bank ---> [B, N]
+    sim_matrix = torch.mm(feature, feature_bank)
+    
+    if (otsu_split is not None):
+        
+        if id in otsu_split['clean_ids']:   
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<5:
+                    temp_radius -=step
+                else:
+                    break
+            
+        elif id in otsu_split['maybe_clean_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<20:
+                    temp_radius -=step
+                else:
+                    break
+        elif id in otsu_split['maybe_noisy_ids'] :
+            temp_radius = 0.99
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<kmin1:
+                    temp_radius -=step
+                else:
+                    break
+        elif id in otsu_split['noisy_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<kmin2:
+                    temp_radius -=step
+                else:
+                    break
+        else:
+            raise Exception("Invalid id")
+
+    knn_k = len(sim_indices)
+    
+    if knn_k > ceil:
+        knn_k = ceil
+    elif knn_k <floor:
+        knn_k = floor
+    
+    sim_weight, sim_indices = sim_matrix.topk(k=knn_k, dim=-1)
+    sim_label_topk = True
+        
+    # [B, K]
+    if sim_label_topk == True:
+        sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices)
+    else:
+        sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices[:,1].view(1,-1))
+    
+
+    sim_weight = torch.ones_like(sim_weight)
+    sim_weight = sim_weight / sim_weight.sum(dim=-1, keepdim=True)
+    
+    # counts for each class
+    one_hot_label = torch.zeros(feature.size(0) * knn_k, classes, device=sim_labels.device)
+    # [B*K, C]
+    one_hot_label = one_hot_label.scatter(dim=-1, index=sim_labels.view(-1, 1), value=1.0)
+    
+    pred_scores = torch.sum(one_hot_label.view(feature.size(0), -1, classes) * sim_weight.unsqueeze(dim=-1), dim=1)
+    pred_labels = pred_scores.argmax(dim=-1)
+    
     return pred_scores, pred_labels, knn_k
