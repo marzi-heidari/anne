@@ -396,7 +396,7 @@ def split_dataset(p):
     return group_1, group_2, group_3, group_4
 
 #def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, knn_k=100, chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
-def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes,  chunks=10, norm='global', radius=0.99, rule="type1",conf=None, knnweight=False, radaptive=None, otsu_split=None,teto=200):
+def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes,  chunks=10, norm='global', radius=0.99, rule="type2",conf=None, knnweight=False, radaptive=None, otsu_split=None,ceil=200):
     # distributed fast KNN and sample selection with three different modes
     num = len(cur_feature)
     num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
@@ -431,7 +431,7 @@ def weighted_knn_ball(epoch, cur_feature, feature, label, num_classes,  chunks=1
             #part_score, part_pred, k_value = ball_predict(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,conf[i],knnweight=knnweight,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
 
             #part_score, part_pred, k_value = ball_predict_debug(i,epoch, part_feature, feature.T, label, num_classes, radius, rule,conf[i],knnweight=knnweight,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
-            part_score, part_pred, k_value = ball_predict_debug_v2(i, part_feature, feature.T, label, num_classes, otsu_split=otsu_split,teto=teto)
+            part_score, part_pred, k_value = ball_predict_debug_v2(i, part_feature, feature.T, label, num_classes, otsu_split=otsu_split,ceil=ceil)
 
             score = torch.cat([score, part_score], dim=0)
             pred = torch.cat([pred, part_pred], dim=0)
@@ -1995,5 +1995,5 @@ def ball_predict_debug_v2(id, feature, feature_bank, feature_labels, classes, ot
     
     pred_scores = torch.sum(one_hot_label.view(feature.size(0), -1, classes) * sim_weight.unsqueeze(dim=-1), dim=1)
     pred_labels = pred_scores.argmax(dim=-1)
-    
+
     return pred_scores, pred_labels, knn_k
