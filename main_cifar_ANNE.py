@@ -22,7 +22,8 @@ parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noi
 
 # model settings
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
-parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
+parser.add_argument('--gamma_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
+parser.add_argument('--gamma_e', default=0.5, type=float, help='clean probability threshold')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
 
 # train settings
@@ -38,7 +39,7 @@ parser.add_argument('--exp-name', type=str, default='')
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help= 'knn max valuee')
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
-parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
+
 parser.add_argument('--kmin1', default=40, type=int, metavar='N1', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='N2', help='kmin2')
 
@@ -137,7 +138,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         prediction_cls = torch.softmax(torch.cat(prediction, dim=0), dim=1)
         his_score, his_label = prediction_cls.max(1)
         print(f'Prediction track: mean: {his_score.mean()} max: {his_score.max()} min: {his_score.min()}')
-        conf_id = torch.where(his_score > args.theta_r)[0]
+        conf_id = torch.where(his_score > args.gamma_r)[0]
         modified_label = torch.clone(noisy_label).detach()
         modified_label[conf_id] = his_label[conf_id]
 
@@ -163,7 +164,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         #fine
         if i>=args.warmup:
             temp_modified_label = modified_label.clone().cpu().detach().numpy()
-            teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)
+            teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, gamma_e=args.gamma_e)
 
             temp_id = [idx for idx in clean_id.cpu().numpy().tolist() if (idx in otsu_split['maybe_noisy_ids']) or (idx in otsu_split['noisy_ids'])  ]
 
@@ -222,7 +223,7 @@ def get_score(singular_vector_dict, features, labels, normalization=True):
     
     return np.array(scores)
     
-def fit_mixture(scores, labels, p_threshold=0.5):
+def fit_mixture(scores, labels, gamma_e=0.5):
     '''
     Assume the distribution of scores: bimodal gaussian mixture model
     
@@ -246,14 +247,14 @@ def fit_mixture(scores, labels, p_threshold=0.5):
             for i in range(len(cls_index)):
                 probs[cls_index[i]] = prob[i]
     
-            clean_labels += [cls_index[clean_idx] for clean_idx in range(len(cls_index)) if prob[clean_idx] > p_threshold] 
+            clean_labels += [cls_index[clean_idx] for clean_idx in range(len(cls_index)) if prob[clean_idx] > gamma_e] 
         else:
             clean_labels += [cls_index[clean_idx] for clean_idx in range(len(cls_index))]
     
     return np.array(clean_labels, dtype=np.int64), probs
     
     
-def fine(current_features, current_labels, fit = 'kmeans', prev_features=None, prev_labels=None, p_threshold=0.7):
+def fine(current_features, current_labels, fit = 'kmeans', prev_features=None, prev_labels=None, gamma_e=0.7):
     '''
     prev_features, prev_labels: data from the previous round
     current_features, current_labels: current round's data
@@ -276,7 +277,7 @@ def fine(current_features, current_labels, fit = 'kmeans', prev_features=None, p
         probs = None
     elif 'gmm' in fit:
         # fit a two-component GMM to the loss
-        clean_labels, probs = fit_mixture(scores, current_labels, p_threshold)
+        clean_labels, probs = fit_mixture(scores, current_labels, gamma_e)
     else:
         raise NotImplemented
     
@@ -302,14 +303,14 @@ def cleansing(scores, labels):
     return np.array(clean_labels, dtype=np.int64)
     
 
-def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
+def extract_cleanidx(features, labels, mode='fine-kmeans', gamma_e=0.6):
     
     scores=None
         
     # get teacher_idx
     if 'fine' in mode:
 
-        teacher_idx, probs, scores = fine(current_features=features, current_labels=labels, fit = mode, p_threshold=p_threshold)
+        teacher_idx, probs, scores = fine(current_features=features, current_labels=labels, fit = mode, gamma_e=gamma_e)
     
     teacher_idx = torch.tensor(teacher_idx)
     return teacher_idx, probs, scores
