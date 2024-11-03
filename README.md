@@ -7,6 +7,18 @@ This repository is the official implementation of ANNE: Adaptive Nearest Neighbo
 ## Illustration
 ![ANNE](img/method.png)
 
+
+
+<table align="center">
+  <tr>
+    <td align="center"> 
+      <img src="img/method.jpg" alt="Examples" style="width: 400px;"/> 
+    </td>
+  </tr>
+</table>
+
+
+
 ## Requirements
 - This codebase is written for `python 3.7.12`.
 - To install necessary python packages, run `pip install -r requirements.txt`.
@@ -22,7 +34,7 @@ python3 main_cifar_ANNE.py --dataset_path ${dataset_path}  --dataset [cifar10|ci
 An example of training RestNet-18 on CIFAR-100 with 50% noise rate:
 
 ```bash
-main_cifar_ANNE.py --dataset_path /datasets  --dataset cifar100 --noise_ratio 0.5  --gpuid 0 --exp-name ANNE_cifar100_nr0.5  --gamma_r 0.5  --gamma_e 0.1  --epochs 300  --warmup 0
+python3 main_cifar_ANNE.py --dataset_path /datasets  --dataset cifar100 --noise_ratio 0.5  --gpuid 0 --exp-name ANNE_cifar100_nr0.5  --gamma_r 0.5  --gamma_e 0.1  --epochs 300  --warmup 0
 ````
 
 In this example, the test results and trained model will be saved on folder "cifar100/ANNE_cifar100_nr0.5/"
