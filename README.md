@@ -9,14 +9,6 @@ This repository is the official implementation of ANNE: Adaptive Nearest Neighbo
 
 
 
-<table align="center">
-  <tr>
-    <td align="center"> 
-      <img src="img/method.jpg" alt="Examples" style="width: 400px;"/> 
-    </td>
-  </tr>
-</table>
-
 
 
 ## Requirements
