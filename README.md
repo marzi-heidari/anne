@@ -17,7 +17,7 @@ This repository is the official implementation of ANNE: Adaptive Nearest Neighbo
 
 ## Training and Evaluating
 
-To train and evaluate the model, for CIFAR dataset, run the following code
+To train and evaluate the model, for CIFAR dataset, run the following code:
 
 ```bash 
 python3 main_cifar_ANNE.py --dataset_path ${dataset_path}  --dataset [cifar10|cifar100] --noise_ratio ${noise_rate} --gpuid 0 --exp-name ${exp_name}  --gamma_r ${gamma_r}  --gamma_e ${gamma_e}  --epochs ${epochs}  --warmup ${warmup}
