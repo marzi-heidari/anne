@@ -38,7 +38,7 @@ python3 main_animal10n_ANNE.py --dataset_path ${dataset_path}  --gpuid 0 --exp-n
 
 To train and evaluate the model, for CIFAR-10/100 dataset with IDN noise , run the following code:
 ```bash 
-python3 main_idn_cifar_ANNE.py   --dataset_path /home/pesquisador/pesquisa/datasets/cifar-100-python --dataset [cifar10|cifar100]  --noise_ratio ${noise_rate}  --gpuid 0 --exp-name ${exp_name}  --gamma_r ${gamma_r}  --gamma_e ${gamma_e}  --epochs 300  --warmup 30
+python3 main_idn_cifar_ANNE.py   --dataset_path ${dataset_path} --dataset [cifar10|cifar100]  --noise_ratio ${noise_rate}  --gpuid 0 --exp-name ${exp_name}  --gamma_r ${gamma_r}  --gamma_e ${gamma_e}  --epochs 300  --warmup 30
 ```
 
 <b>Cite ANNE</b>\
