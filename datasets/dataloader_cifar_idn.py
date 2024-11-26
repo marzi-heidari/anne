@@ -64,10 +64,10 @@ class cifar_dataset(Dataset):
             self.clean_label = train_label
 
             if os.path.exists(noise_file):
-                print("[ENCONTROU O NOISE FILE\n")
+                print("Noise File Found!\n")
                 noise_label = torch.load(noise_file)
             else:
-                # print("[NAO EXISTE O NOISE FILE\n")
+                print("Noise File Does Not Exist...\n")
                 data_ = torch.from_numpy(train_data).float().cuda()
                 targets_ = torch.IntTensor(train_label).cuda()
                 dataset = zip(data_, targets_)

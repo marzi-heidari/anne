@@ -6,17 +6,17 @@ from torch.optim import SGD
 from torch.utils.data import Subset
 from tqdm import tqdm
 
-from datasets.dataloader_cifar import cifar_dataset
+from datasets.dataloader_cifar_idn import cifar_dataset
 from models.preresnet import PreResNet18
 from sklearn.mixture import GaussianMixture
 from utils import *
 
 parser = argparse.ArgumentParser('Train with synthetic cifar noisy dataset')
 parser.add_argument('--dataset_path', default='~/CIFAR/CIFAR10', help='dataset path')
-parser.add_argument('--dataset', default='cifar10', help='dataset name')
+parser.add_argument('--dataset', default='cifar100', help='dataset name')
 
 # dataset settings
-parser.add_argument('--noise_mode', default='sym', type=str, help='artifical noise mode (default: symmetric)')
+parser.add_argument('--noise_mode', default='instance', type=str, help='artifical noise mode (default: symmetric)')
 parser.add_argument('--noise_ratio', default=0.5, type=float, help='artifical noise ratio (default: 0.5)')
 parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noise ratio (default: 0.0)')
 
@@ -37,11 +37,14 @@ parser.add_argument('--seed', default=3047, type=int, help='seed for initializin
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
 parser.add_argument('--exp-name', type=str, default='')
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
-parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help= 'knn max valuee')
+parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help='ceil knn')
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 
 parser.add_argument('--kmin1', default=40, type=int, metavar='N1', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='N2', help='kmin2')
+
+
+
 
 def train(labeled_trainloader, modified_label, all_trainloader, encoder, classifier, proj_head, pred_head, optimizer, epoch, args):
     encoder.train()
@@ -52,13 +55,13 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
     ulosses = AverageMeter('uloss')
     labeled_train_iter = iter(labeled_trainloader)
     all_bar = tqdm(all_trainloader)
-    for batch_idx, ([inputs_u1, inputs_u2], _, _, _) in enumerate(all_bar):
+    for batch_idx, ([inputs_u1, inputs_u2], _, _) in enumerate(all_bar):
         try:
-            
+            # [inputs_x1, inputs_x2], labels_x, index = labeled_train_iter.next()
             [inputs_x1, inputs_x2], labels_x, _, index = next(labeled_train_iter)
         except:
             labeled_train_iter = iter(labeled_trainloader)
-            
+            # [inputs_x1, inputs_x2], labels_x,  index = labeled_train_iter.next()
             [inputs_x1, inputs_x2], labels_x, _, index = next(labeled_train_iter)
 
         # cross-entropy training with mixup
@@ -99,15 +102,18 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
         loss.backward()
         optimizer.step()
 
+
 def test(testloader, encoder, classifier, epoch):
     encoder.eval()
     classifier.eval()
     accuracy = AverageMeter('accuracy')
     data_bar = tqdm(testloader)
     with torch.no_grad():
-        for i, (data, label, _) in enumerate(data_bar):
+        
+        for i, (data, label) in enumerate(data_bar):
             data, label = data.cuda(), label.cuda()
             feat = encoder(data)
+            
             res = classifier(feat)
             pred = torch.argmax(res, dim=1)
             acc = torch.sum(pred == label) / float(data.size(0))
@@ -115,6 +121,7 @@ def test(testloader, encoder, classifier, epoch):
             data_bar.set_description(f'Test epoch {epoch+1}: Accuracy#{accuracy.avg:.4f}')
     
     return accuracy.avg
+
 
 
 def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i, stat_logs):
@@ -126,7 +133,8 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
     ################################### feature extraction ###################################
     with torch.no_grad():
         # generate feature bank
-        for (data, target, _, index) in tqdm(dataloader, desc='Feature extracting'):
+        #for (data, target, _, index) in tqdm(dataloader, desc='Feature extracting'):
+        for (data, target, index) in tqdm(dataloader, desc='Feature extracting'):
             data = data.cuda()
             feature = encoder(data)
             feature_bank.append(feature)
@@ -144,17 +152,19 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
 
         otsu_split = None
         if i>=args.warmup:
-            
-            group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
-            otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
-                        'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
-                        'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
-                        'noisy_ids': torch.nonzero(group_4_noisy)
-            }
+            if  "otsu" in args.radaptive:
+                
+                group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
+                otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
+                            'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
+                            'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
+                            'noisy_ids': torch.nonzero(group_4_noisy)
+                }
+                
         
         ################################### sample selection ###################################
-        
         prediction_knn, _, _, _, _ = weighted_aknn(feature_bank, feature_bank, modified_label, args.num_classes,   otsu_split=otsu_split, ceil=args.ceil )  # temperature in weighted KNN
+        
         vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
         right_score = vote_y / vote_max
@@ -173,9 +183,8 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                     temp_id.append(idx.item())
             clean_id = torch.tensor(temp_id).cuda()
 
-            
-
         ################################### SSR monitor ###################################
+        
         TP = torch.sum(modified_label[clean_id] == clean_label[clean_id])
         FP = torch.sum(modified_label[clean_id] != clean_label[clean_id])
         TN = torch.sum(modified_label[noisy_id] != clean_label[noisy_id])
@@ -191,7 +200,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         stat_logs.write(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}\n')
         stat_logs.write(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}\n')
         stat_logs.flush()
-                
+
     return clean_id, noisy_id, modified_label
 
 def get_singular_vector(features, labels):
@@ -204,7 +213,6 @@ def get_singular_vector(features, labels):
     singular_vector_dict = {}
     with tqdm(total=len(np.unique(labels))) as pbar:
         for index in np.unique(labels):
-            
             
             _, _, v = np.linalg.svd(features[labels==index])
             singular_vector_dict[index] = v[0]
@@ -302,7 +310,6 @@ def cleansing(scores, labels):
         
     return np.array(clean_labels, dtype=np.int64)
     
-
 def extract_cleanidx(features, labels, mode='fine-kmeans', gamma_e=0.6):
     
     scores=None
@@ -314,8 +321,6 @@ def extract_cleanidx(features, labels, mode='fine-kmeans', gamma_e=0.6):
     
     teacher_idx = torch.tensor(teacher_idx)
     return teacher_idx, probs, scores
-
-
 
 
 def main():
@@ -337,7 +342,7 @@ def main():
         args.num_classes = 10
         args.image_size = 32
         normalize = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-    elif args.dataset == 'cifar100':
+    elif args.dataset in ['cifar100','red']:
         args.num_classes = 100
         args.image_size = 32
         normalize = transforms.Normalize((0.507, 0.487, 0.441), (0.267, 0.256, 0.276))
@@ -357,37 +362,24 @@ def main():
                                            transforms.ToTensor(),
                                            normalize])
 
-    # generate train dataset with only filtered clean subset
-    train_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                            #    noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                               noise_data_dir=args.dataset_path, noisy_dataset=None,
-                               transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
-                               dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                               
-    eval_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=weak_transform,
-                              #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                              noise_data_dir=args.dataset_path, noisy_dataset=None,
-                              dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                              open_ratio=args.open_ratio,
-                              noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                            
-    test_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=none_transform,
-                              #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                              noise_data_dir=None, noisy_dataset=None,
-                              dataset_mode='test')
-    all_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                                   #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                                   noise_data_dir=args.dataset_path, noisy_dataset=None,
-                                   transform=MixTransform(strong_transform=strong_transform, weak_transform=weak_transform, K=1),
-                                   open_ratio=args.open_ratio,
-                                   dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                                   noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                                
+    transform_test = transforms.Compose([
 
-    # extract noisy labels and clean labels for performance monitoring
+                transforms.Resize((32, 32), interpolation=2),
+                transforms.ToTensor(),
+                transforms.Normalize((0.507, 0.487, 0.441), (0.267, 0.256, 0.276)),
+            ])    
+           
+    noise_file='%s/%.1f_%s.pt'%(args.dataset_path,args.noise_ratio,args.noise_mode)
+    train_data = cifar_dataset(dataset=args.dataset, noise_mode=args.noise_mode, r=args.noise_ratio, root_dir=args.dataset_path, transform=KCropsTransform(strong_transform, 2), mode="all",noise_file=noise_file)                
     
-    noisy_label = torch.tensor(eval_data.cifar_label).cuda()
+    eval_data = cifar_dataset(dataset=args.dataset, noise_mode=args.noise_mode, r=args.noise_ratio, root_dir=args.dataset_path, transform=weak_transform, mode="all",noise_file=noise_file)                
+   
+    test_data = cifar_dataset(dataset=args.dataset, noise_mode=args.noise_mode, r=args.noise_ratio, root_dir=args.dataset_path, transform=transform_test, mode='test')      
+    
+    all_data = cifar_dataset(dataset=args.dataset, noise_mode=args.noise_mode, r=args.noise_ratio, root_dir=args.dataset_path, transform=MixTransform(strong_transform=strong_transform, weak_transform=weak_transform, K=1), mode="all",noise_file=noise_file)                
+
+    noisy_label = torch.tensor(eval_data.noise_label).cuda()
+    
     clean_label = torch.tensor(eval_data.clean_label).cuda()
 
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
@@ -425,7 +417,10 @@ def main():
     all_acc = []
 
     ################################ Training loop ###########################################
-    for i in range(0,args.epochs):
+    clean_id=[]
+    modified_label=[]
+    for i in range(args.epochs):
+        
         clean_id, noisy_id, modified_label = evaluate(eval_loader, encoder, classifier, args, noisy_label, clean_label, i, stat_logs)
 
         # balanced_sampler
