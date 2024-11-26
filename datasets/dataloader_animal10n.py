@@ -8,7 +8,7 @@ class animal_dataset(Dataset):
     def __init__(self, root, transform=None, mode='train'):
         train_path = os.listdir(os.path.abspath(root) + '/training')
         test_path = os.listdir(os.path.abspath(root) + '/testing')
-        # print(train_path)
+
         print('Please be patient for image loading!')
         if mode == 'train':
             dir_path = os.path.abspath(root) + '/training'

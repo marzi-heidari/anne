@@ -1,5 +1,5 @@
 # ANNE: Adaptive Nearest Neighbors and Eigenvector-based Sample Selection for Robust Learning with Noisy Labels
-This repository is the official implementation of ANNE: Adaptive Nearest Neighbors and Eigenvector-based Sample Selection for Robust Learning with Noisy Labels (Pattern Recognition 2024).
+This repository is the official implementation of ANNE: [Adaptive Nearest Neighbors and Eigenvector-based Sample Selection for Robust Learning with Noisy Labels](https://doi.org/10.1016/j.patcog.2024.111132) (Pattern Recognition 2024).
 
 <b>Authors</b>: Filipe R. Cordeiro and Gustavo Carneiro
 
@@ -39,7 +39,7 @@ If you find the code useful in your research, please consider citing our paper:
   title={ANNE: Adaptive Nearest Neighbors and Eigenvector-based Sample Selection for Robust Learning with Noisy Labels},
   author={Cordeiro, F. R. and  Carneiro, Gustavo},
   journal={Pattern Recognition},
-  volume={?},
+  volume={159},
   year={2024}
 }
 ```
