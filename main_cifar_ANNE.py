@@ -180,13 +180,13 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         FP = torch.sum(modified_label[clean_id] != clean_label[clean_id])
         TN = torch.sum(modified_label[noisy_id] != clean_label[noisy_id])
         FN = torch.sum(modified_label[noisy_id] == clean_label[noisy_id])
-        print(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}')
+        print(f'Epoch [{i+1}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}')
 
         correct = torch.sum(modified_label[conf_id] == clean_label[conf_id])
         orginal = torch.sum(noisy_label[conf_id] == clean_label[conf_id])
         all = len(conf_id)
         
-        print(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}')
+        print(f'Epoch [{i+1}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}')
 
         stat_logs.write(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}\n')
         stat_logs.write(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}\n')
@@ -425,7 +425,7 @@ def main():
     all_acc = []
 
     ################################ Training loop ###########################################
-    for i in range(1,args.epochs +1):
+    for i in range(0,args.epochs):
         clean_id, noisy_id, modified_label = evaluate(eval_loader, encoder, classifier, args, noisy_label, clean_label, i, stat_logs)
 
         # balanced_sampler
@@ -448,9 +448,9 @@ def main():
                 'pred_head': pred_head.state_dict(),
                 'optimizer': optimizer.state_dict(),
             }, filename=f'{args.dataset}/{args.run_path}/best_acc.pth.tar')
-        acc_logs.write(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
+        acc_logs.write(f'Epoch [{i+1}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
         acc_logs.flush()
-        print(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
+        print(f'Epoch [{i+1}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
 
     save_checkpoint({
         'cur_epoch': args.epochs,

@@ -413,7 +413,7 @@ def main():
             }, filename=f'{args.dataset}/{args.run_path}/best_acc.pth.tar')
         acc_logs.write(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
         acc_logs.flush()
-        print(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
+        print(f'Epoch [{i+1}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
     save_checkpoint({
         'cur_epoch': i,
         'classifier': classifier.state_dict(),
