@@ -304,6 +304,7 @@ def main():
     seed_everything(args.seed)
 
     args.run_path = args.exp_name
+    args.dataset = "animal10n"
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
     
