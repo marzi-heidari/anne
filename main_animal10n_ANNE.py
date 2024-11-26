@@ -19,7 +19,7 @@ parser.add_argument('--dataset_path', default='~/ANIMAL-10N', help='dataset path
 # model settings
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for voted correct samples (default: 1.0)')
 parser.add_argument('--gamma_r', default=0.95, type=float, help='threshold for relabel samples (default: 0.95)')
-parser.add_argument('--gamma_e', default=0.5, type=float, help='clean probability threshold')
+parser.add_argument('--gamma_e', default=0.3, type=float, help='clean probability threshold')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
 
 # train settings
