@@ -244,7 +244,7 @@ class GaussianBlur(object):
 def otsu(p):
     """ Calculates a threshold to separate into two groups based on OTSU """
     hist = torch.histc(p, 1000, 0, 1)
-    import pdb; pdb.set_trace()
+    
     def Q(hist, s, mu):
         n1, n2 = hist[:s].sum(), hist[s:].sum()
         if n1 == 0 or n2 == 0:
@@ -263,7 +263,7 @@ def otsu(p):
         q.append(Q(hist, s, p.mean())[0])
     s = torch.argmax(torch.tensor(q))
     q, mu1, mu2, sigma1, sigma2 = Q(hist, s, p.mean())
-    
+    import pdb; pdb.set_trace()
     mu2, sigma2, mu1, sigma1, s = mu2.detach().cpu().item(), sigma2.detach().cpu().item(), \
                                   mu1.detach().cpu().item(), sigma1.detach().cpu().item(), s / 1000
     return mu2, sigma2, mu1, sigma1, s
