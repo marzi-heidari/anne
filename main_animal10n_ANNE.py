@@ -144,14 +144,13 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, i):
 
         otsu_split = None
         if i>=args.warmup:
-            if  "otsu" in args.radaptive:
-                # import pdb; pdb.set_trace()
-                group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
-                otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
-                            'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
-                            'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
-                            'noisy_ids': torch.nonzero(group_4_noisy)
-                }
+            
+            group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
+            otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
+                        'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
+                        'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
+                        'noisy_ids': torch.nonzero(group_4_noisy)
+            }
 
         ################################### sample selection ###################################
         
