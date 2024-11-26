@@ -425,7 +425,7 @@ def main():
     all_acc = []
 
     ################################ Training loop ###########################################
-    for i in range(args.epochs):
+    for i in range(1,args.epochs +1):
         clean_id, noisy_id, modified_label = evaluate(eval_loader, encoder, classifier, args, noisy_label, clean_label, i, stat_logs)
 
         # balanced_sampler
