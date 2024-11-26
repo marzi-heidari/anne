@@ -31,7 +31,7 @@ parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight dec
 parser.add_argument('--seed', default=3047, type=int, help='seed for initializing training. (default: 3047)')
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
 parser.add_argument('--exp-name', type=str, default='')
-parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
+parser.add_argument('--warmup', default=1, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--ceil', default=200, type=int, metavar='ceil', help='ceil knn')
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
 
