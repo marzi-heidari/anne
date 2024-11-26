@@ -330,49 +330,54 @@ def akk_predict(id, feature, feature_bank, feature_labels, classes, otsu_split=N
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.mm(feature, feature_bank)
     
-    # if (otsu_split is not None):
+    #not warmup
+    if (otsu_split is not None): 
         
-    if id in otsu_split['clean_ids']:   
-        temp_radius = 0.99 
-        while True:
-            mask = sim_matrix>temp_radius
-            sim_indices = torch.nonzero(mask)
-            if len(sim_indices)<5:
-                temp_radius -=step
-            else:
-                break
+        if id in otsu_split['clean_ids']:   
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<5:
+                    temp_radius -=step
+                else:
+                    break
+            
+        elif id in otsu_split['maybe_clean_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<20:
+                    temp_radius -=step
+                else:
+                    break
+        elif id in otsu_split['maybe_noisy_ids'] :
+            temp_radius = 0.99
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<kmin1:
+                    temp_radius -=step
+                else:
+                    break
+        elif id in otsu_split['noisy_ids']:
+            temp_radius = 0.99 
+            while True:
+                mask = sim_matrix>temp_radius
+                sim_indices = torch.nonzero(mask)
+                if len(sim_indices)<kmin2:
+                    temp_radius -=step
+                else:
+                    break
+        else:
+            raise Exception("Invalid id")
         
-    elif id in otsu_split['maybe_clean_ids']:
-        temp_radius = 0.99 
-        while True:
-            mask = sim_matrix>temp_radius
-            sim_indices = torch.nonzero(mask)
-            if len(sim_indices)<20:
-                temp_radius -=step
-            else:
-                break
-    elif id in otsu_split['maybe_noisy_ids'] :
-        temp_radius = 0.99
-        while True:
-            mask = sim_matrix>temp_radius
-            sim_indices = torch.nonzero(mask)
-            if len(sim_indices)<kmin1:
-                temp_radius -=step
-            else:
-                break
-    elif id in otsu_split['noisy_ids']:
-        temp_radius = 0.99 
-        while True:
-            mask = sim_matrix>temp_radius
-            sim_indices = torch.nonzero(mask)
-            if len(sim_indices)<kmin2:
-                temp_radius -=step
-            else:
-                break
+        knn_k = len(sim_indices)
     else:
-        raise Exception("Invalid id")
-
-    knn_k = len(sim_indices)
+        #warmup
+        knn_k = ceil
+        
     
     if knn_k > ceil:
         knn_k = ceil

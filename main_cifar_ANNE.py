@@ -112,7 +112,7 @@ def test(testloader, encoder, classifier, epoch):
             pred = torch.argmax(res, dim=1)
             acc = torch.sum(pred == label) / float(data.size(0))
             accuracy.update(acc.item(), data.size(0))
-            data_bar.set_description(f'Test epoch {epoch}: Accuracy#{accuracy.avg:.4f}')
+            data_bar.set_description(f'Test epoch {epoch+1}: Accuracy#{accuracy.avg:.4f}')
     
     return accuracy.avg
 

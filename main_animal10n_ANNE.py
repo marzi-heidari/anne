@@ -109,7 +109,7 @@ def test(testloader, encoder, classifier, epoch):
             pred = torch.argmax(res, dim=1)
             acc = torch.sum(pred == label) / float(data.size(0))
             accuracy.update(acc.item(), data.size(0))
-            data_bar.set_description(f'Test epoch {epoch}: Accuracy#{accuracy.avg:.4f}')
+            data_bar.set_description(f'Test epoch {epoch+1}: Accuracy#{accuracy.avg:.4f}')
     return accuracy.avg
 
 
@@ -411,7 +411,7 @@ def main():
                 'pred_head': pred_head.state_dict(),
                 'optimizer': optimizer.state_dict(),
             }, filename=f'{args.dataset}/{args.run_path}/best_acc.pth.tar')
-        acc_logs.write(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
+        acc_logs.write(f'Epoch [{i+1}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
         acc_logs.flush()
         print(f'Epoch [{i+1}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
     save_checkpoint({
