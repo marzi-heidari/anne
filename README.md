@@ -26,7 +26,7 @@ python3 main_cifar_ANNE.py --dataset_path ${dataset_path}  --dataset [cifar10|ci
 An example of training RestNet-18 on CIFAR-100 with 50% noise rate:
 
 ```bash
-python3 main_cifar_ANNE.py --dataset_path /datasets  --dataset cifar100 --noise_ratio 0.5  --gpuid 0 --exp-name ANNE_cifar100_nr0.5  --gamma_r 0.5  --gamma_e 0.1  --epochs 300  --warmup 0
+python3 main_cifar_ANNE.py --dataset_path /datasets  --dataset cifar100 --noise_ratio 0.5  --gpuid 0 --exp-name ANNE_cifar100_nr0.5  --gamma_r 0.5  --gamma_e 0.1  --epochs 300  --warmup 30
 ````
 
 In this example, the test results and trained model will be saved on folder "cifar100/ANNE_cifar100_nr0.5/"
