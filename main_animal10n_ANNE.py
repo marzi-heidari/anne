@@ -89,7 +89,7 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
         xlosses.update(Lce.item())
         ulosses.update(Lfc.item())
         all_bar.set_description(
-            f'Train epoch {epoch} LR:{optimizer.param_groups[0]["lr"]} Labeled loss: {xlosses.avg:.4f} Unlabeled loss: {ulosses.avg:.4f}')
+            f'Train epoch {epoch+1} LR:{optimizer.param_groups[0]["lr"]} Labeled loss: {xlosses.avg:.4f} Unlabeled loss: {ulosses.avg:.4f}')
 
         optimizer.zero_grad()
         loss.backward()
