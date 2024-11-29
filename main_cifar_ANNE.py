@@ -361,7 +361,7 @@ def main():
 
     # generate train dataset with only filtered clean subset
     train_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                               noise_data_dir=args.dataset_path, open_name=args.open_name, open_dir=args.open_path,
+                               open_name=args.open_name, open_dir=args.open_path,
                                transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
                                dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                                noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
