@@ -14,6 +14,8 @@ from utils import *
 parser = argparse.ArgumentParser('Train with synthetic cifar noisy dataset')
 parser.add_argument('--dataset_path', default='~/CIFAR/CIFAR10', help='dataset path')
 parser.add_argument('--dataset', default='cifar10', help='dataset name')
+parser.add_argument('--open_path', default='~/CIFAR100', help='open noise dataset path')
+parser.add_argument('--open_name', default='cifar100', help='open noise dataset name')
 
 # dataset settings
 parser.add_argument('--noise_mode', default='sym', type=str, help='artifical noise mode (default: symmetric)')
@@ -27,7 +29,7 @@ parser.add_argument('--gamma_e', default=0.5, type=float, help='clean probabilit
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
 
 # train settings
-parser.add_argument('--model', default='PreResNet18', help=f'model architecture (default: PreResNet18)')
+parser.add_argument('--model', default='PreResNet18', help='model architecture (default: PreResNet18)')
 parser.add_argument('--epochs', default=300, type=int, metavar='N', help='number of total epochs to run (default: 300)')
 parser.add_argument('--batch_size', default=128, type=int, help='mini-batch size (default: 128)')
 parser.add_argument('--lr', default=0.02, type=float, help='initial learning rate (default: 0.02)')
@@ -359,26 +361,25 @@ def main():
 
     # generate train dataset with only filtered clean subset
     train_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                            #    noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                               noise_data_dir=args.dataset_path, noisy_dataset=None,
+                               noise_data_dir=args.dataset_path, open_name=args.open_name, open_dir=args.open_path,
                                transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
                                dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                                noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
                                
     eval_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=weak_transform,
-                              #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                              noise_data_dir=args.dataset_path, noisy_dataset=None,
+                              
+                              noise_data_dir=args.dataset_path, open_name=args.open_name, open_dir=args.open_path,
                               dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                               open_ratio=args.open_ratio,
                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
                             
     test_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=none_transform,
-                              #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                              noise_data_dir=None, noisy_dataset=None,
+                              
+                              open_name=args.open_name, open_dir=args.open_path, 
                               dataset_mode='test')
     all_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
-                                   #noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                                   noise_data_dir=args.dataset_path, noisy_dataset=None,
+                                   
+                                   open_name=args.open_name, open_dir=args.open_path,
                                    transform=MixTransform(strong_transform=strong_transform, weak_transform=weak_transform, K=1),
                                    open_ratio=args.open_ratio,
                                    dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,

@@ -1,10 +1,9 @@
-from torch.utils.data import Dataset, Subset, DataLoader
-import torchvision.transforms as transforms
+import os
+import numpy as np
+from torch.utils.data import Dataset
 import json
 import random
 from torchvision.datasets.cifar import *
-from typing import Any, Callable, Optional, Tuple
-import torch
 
 
 def unpickle(file):
@@ -13,8 +12,9 @@ def unpickle(file):
         dict = cPickle.load(fo, encoding='latin1')
     return dict
 
+
 class cifar_dataset(Dataset):
-    def __init__(self, dataset, noisy_dataset, root_dir, noise_data_dir, transform,  noise_mode='sym',
+    def __init__(self, dataset, root_dir, open_name,  open_dir, transform,  noise_mode='sym',
                  dataset_mode='train', noise_ratio=0.5, open_ratio=0.5, noise_file=None):
 
         self.r = noise_ratio  # total noise ratio
@@ -53,26 +53,28 @@ class cifar_dataset(Dataset):
                 cifar_label = cifar_dic['fine_labels']
                 self.cifar_data = cifar_dic['data'].reshape((50000, 3, 32, 32)).transpose((0, 2, 3, 1))
             self.clean_label = cifar_label
-            if noisy_dataset == 'imagenet32':
-                noise_data = None
-            else:
-                noise_data = unpickle('%s/cifar-100-python/train' % noise_data_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
+
+            
+            if open_name == 'cifar100':
+                open_data = unpickle('%s/cifar-100-python/train' % open_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
                     (0, 2, 3, 1))
+            else:
+                print("Open noise dataset not supported")
 
             if os.path.exists(noise_file):
                 noise = json.load(open(noise_file, "r"))
                 noise_labels = noise['noise_labels']
                 self.open_noise = noise['open_noise']
-                # self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
+                self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
                 self.closed_noise = noise['closed_noise']
                 for cleanIdx, noisyIdx in noise['open_noise']:
-                    if noisy_dataset == 'imagenet32':
+                    if open_name == 'imagenet32':
                         self.cifar_data[cleanIdx] = np.asarray(
-                            Image.open('{}/{}.png'.format(noise_data_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
+                            Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
                         # set the groundtruth outliers label to be -1
                         self.clean_label[cleanIdx] = 10
                     else:
-                        self.cifar_data[cleanIdx] = noise_data[noisyIdx]
+                        self.cifar_data[cleanIdx] = open_data[noisyIdx]
                         self.clean_label[cleanIdx] = 10
                 self.cifar_label = noise_labels
             
@@ -86,7 +88,7 @@ class cifar_dataset(Dataset):
                 print('Statistics of synthetic noisy CIFAR dataset: ', 'num of clean samples: ', 50000 - num_total_noise,
                       ' num of closed-set noise: ', num_total_noise - num_open_noise, ' num of open-set noise: ', num_open_noise)
                 # print(num_open_noise, num_total_noise)
-                if noisy_dataset == 'imagenet32':  # indices of openset source images
+                if open_name == 'imagenet32':  # indices of openset source images
                     target_noise_idx = list(range(1281149))
                 else:
                     target_noise_idx = list(range(50000))
@@ -109,13 +111,13 @@ class cifar_dataset(Dataset):
                         noise_labels.append(cifar_label[i])
                 # populate openset noise images
                 for cleanIdx, noisyIdx in self.open_noise:
-                    if noisy_dataset == 'imagenet32':
+                    if open_name == 'imagenet32':
                         self.cifar_data[cleanIdx] = np.asarray(
-                            Image.open('{}/{}.png'.format(noise_data_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
+                            Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
                         self.clean_label[cleanIdx] = 10000
 
                     else:
-                        self.cifar_data[cleanIdx] = noise_data[noisyIdx]
+                        self.cifar_data[cleanIdx] = open_data[noisyIdx]
                         self.clean_label[cleanIdx] = 10000
 
                 # write noise to a file, to re-use
@@ -123,7 +125,7 @@ class cifar_dataset(Dataset):
                 print("save noise to %s ..." % noise_file)
                 json.dump(noise, open(noise_file, "w"))
                 self.cifar_label = noise_labels
-                # self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
+                self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
 
         else:
             raise ValueError(f'Dataset mode should be train or test rather than {self.dataset_mode}!')
