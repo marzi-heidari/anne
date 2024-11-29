@@ -368,7 +368,7 @@ def main():
                                
     eval_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=weak_transform,
                               
-                              noise_data_dir=args.dataset_path, open_name=args.open_name, open_dir=args.open_path,
+                               open_name=args.open_name, open_dir=args.open_path,
                               dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
                               open_ratio=args.open_ratio,
                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
