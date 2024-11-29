@@ -54,28 +54,30 @@ class cifar_dataset(Dataset):
                 self.cifar_data = cifar_dic['data'].reshape((50000, 3, 32, 32)).transpose((0, 2, 3, 1))
             self.clean_label = cifar_label
 
-            
-            if open_name == 'cifar100':
-                open_data = unpickle('%s/cifar-100-python/train' % open_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
-                    (0, 2, 3, 1))
-            else:
-                print("Open noise dataset not supported")
+            if open_ratio > 0:
+                if open_name == 'cifar100':
+                    open_data = unpickle('%s/cifar-100-python/train' % open_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
+                        (0, 2, 3, 1))
+                else:
+                    print("Open noise dataset not supported")
 
             if os.path.exists(noise_file):
                 noise = json.load(open(noise_file, "r"))
                 noise_labels = noise['noise_labels']
-                self.open_noise = noise['open_noise']
-                self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
                 self.closed_noise = noise['closed_noise']
-                for cleanIdx, noisyIdx in noise['open_noise']:
-                    if open_name == 'imagenet32':
-                        self.cifar_data[cleanIdx] = np.asarray(
-                            Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
-                        # set the groundtruth outliers label to be -1
-                        self.clean_label[cleanIdx] = 10
-                    else:
-                        self.cifar_data[cleanIdx] = open_data[noisyIdx]
-                        self.clean_label[cleanIdx] = 10
+                if open_ratio > 0:
+                    self.open_noise = noise['open_noise']
+                    self.open_id = np.array(self.open_noise)[:, 0] if len(self.open_noise) !=0 else None
+                
+                    for cleanIdx, noisyIdx in noise['open_noise']:
+                        if open_name == 'imagenet32':
+                            self.cifar_data[cleanIdx] = np.asarray(
+                                Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
+                            # set the groundtruth outliers label to be -1
+                            self.clean_label[cleanIdx] = 10000
+                        else:
+                            self.cifar_data[cleanIdx] = open_data[noisyIdx]
+                            self.clean_label[cleanIdx] = 10000
                 self.cifar_label = noise_labels
             
             else:
@@ -110,15 +112,16 @@ class cifar_dataset(Dataset):
                     else:
                         noise_labels.append(cifar_label[i])
                 # populate openset noise images
-                for cleanIdx, noisyIdx in self.open_noise:
-                    if open_name == 'imagenet32':
-                        self.cifar_data[cleanIdx] = np.asarray(
-                            Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
-                        self.clean_label[cleanIdx] = 10000
+                if open_ratio>0:
+                    for cleanIdx, noisyIdx in self.open_noise:
+                        if open_name == 'imagenet32':
+                            self.cifar_data[cleanIdx] = np.asarray(
+                                Image.open('{}/{}.png'.format(open_dir, str(noisyIdx + 1).zfill(7)))).reshape((32, 32, 3))
+                            self.clean_label[cleanIdx] = 10000
 
-                    else:
-                        self.cifar_data[cleanIdx] = open_data[noisyIdx]
-                        self.clean_label[cleanIdx] = 10000
+                        else:
+                            self.cifar_data[cleanIdx] = open_data[noisyIdx]
+                            self.clean_label[cleanIdx] = 10000
 
                 # write noise to a file, to re-use
                 noise = {'noise_labels': noise_labels, 'open_noise': self.open_noise, 'closed_noise': self.closed_noise}
