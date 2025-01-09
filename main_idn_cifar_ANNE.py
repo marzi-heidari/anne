@@ -286,7 +286,7 @@ def train(modified_label, all_trainloader, encoder, classifier, proj_head, optim
     return modified_label
 
 
-def test(testloader, encoder, classifier, epoch):
+def test(testloader, encoder, classifier, epoch,args):
     encoder.eval()
     classifier.eval()
     accuracy = AverageMeter('accuracy')
@@ -534,7 +534,7 @@ def main():
         modified_label = train(modified_label, all_loader, encoder, classifier, proj_head, optimizer, i,
                                  args)
 
-        cur_acc = test(test_loader, encoder, classifier, i)
+        cur_acc = test(test_loader, encoder, classifier, i,args)
         all_acc.append(cur_acc)
         scheduler.step()
         if cur_acc > best_acc:
