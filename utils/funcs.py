@@ -20,7 +20,7 @@ def seed_everything(seed: int):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
 
-def D(p, z, version='simplified'):  # negative cosine similarity
+def negative_cosine_sim(p, z, version='simplified'):  # negative cosine similarity
     if version == 'original':
         z = z.detach()  # stop gradient
         p = F.normalize(p, dim=1)  # l2-normalize

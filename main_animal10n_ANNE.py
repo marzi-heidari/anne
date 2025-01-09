@@ -84,7 +84,7 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
 
         z1, z2 = f(feats_u1), f(feats_u2)
         p1, p2 = h(z1), h(z2)
-        Lfc = D(p2, z1)
+        Lfc = negative_cosine_sim(p2, z1)
         loss = Lce + args.lambda_fc * Lfc
         xlosses.update(Lce.item())
         ulosses.update(Lfc.item())
